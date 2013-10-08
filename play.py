@@ -1,5 +1,7 @@
 import rtmidi
 import sys
+import os
+import Queue
 import cv2
 
 VERSION_FORMAT = '%(prog)s 1.0'
@@ -7,14 +9,20 @@ VERSION_FORMAT = '%(prog)s 1.0'
 sol_img = cv2.imread('sol.png')
 do_img = cv2.imread('do.png')
 re_img = cv2.imread('re.png')
+black_mov_path = 'videos/black.wmv'
+sol_mov_path = 'videos/sol.wmv'
+do_mov_path = 'videos/do.wmv'
+re_mov_path = 'videos/re.wmv'
 black_img = cv2.imread('black.png')
 
 winName = "Display"
-cv2.namedWindow(winName)
-
+cv2.namedWindow(winName, cv2.CV_WINDOW_AUTOSIZE)
 
 class MidiInputCallback(object):
-    images = { 72 : do_img,  74 : re_img, 79 : sol_img}
+    videos = { 72 : do_mov_path,  74 : re_mov_path, 79 : sol_mov_path}
+    
+    # elements are (should_play, video_name)
+    video_messages = Queue.deque()
     def __init__(self, midiout, do_prints=False):
         self.midiout = midiout
         self.do_prints = do_prints
@@ -23,17 +31,17 @@ class MidiInputCallback(object):
         message, time_delta = message_and_delta
         if self.do_prints:
             sys.stdout.write("%s, %s\n" % (time_delta, message))
-            
-        opcode, note, intensity = message
-           
-        if opcode == 144:
-            cv2.imshow(winName, self.images.get(message[1], black_img))
-        elif opcode == 128:
-            cv2.imshow(winName, black_img)
-        
-       
         #play sound
         self.midiout.send_message(message)
+            
+        opcode, note, velocity = message
+           
+        video_path = self.videos.get(message[1], black_mov_path)
+        if opcode == 144:
+            self.video_messages.append((True, video_path))
+        elif opcode == 128:
+            self.video_messages.append((False, video_path))
+        
        
 if __name__ == "__main__":
     midiout = rtmidi.MidiOut()
@@ -57,16 +65,37 @@ if __name__ == "__main__":
                 raise ValueError("No suitable MIDI input port found")
         midiin.open_port(in_port)
         print "MIDI received from %s" % (in_port_name, )
-        midiin.set_callback(MidiInputCallback(midiout, do_prints=True))
+        MidiInCb = MidiInputCallback(midiout, do_prints=True)
+        midiin.set_callback(MidiInCb)
     
+    
+    currently_playing = {}
     while True:
-            key = cv2.waitKey(10)
-            if key == ord('q'):
-                cv2.destroyWindow(winName)
-                break
-    
-    
-    
+        try: should_play, video_name = MidiInCb.video_messages.pop()
+        except IndexError: video_name = ""
+        
+        if video_name:
+            if should_play:
+                currently_playing[video_name] = cv2.VideoCapture(video_name)
+                cv2.namedWindow(video_name)
+            else:
+                try:
+                    cv2.destroyWindow(video_name)
+                    currently_playing.pop(video_name)
+                except:
+                    pass
+
+        for name in currently_playing.keys():
+            vc = currently_playing[name]
+            ret, frame = vc.read()
+            if ret: cv2.imshow(name, frame)
+            else: currently_playing.pop(name)
+        # vc.set(cv2.cv.CV_CAP_PROP_POS_FRAMES, 0) # rewind :P
+   
+        key = cv2.waitKey(38)
+        if key == ord('q'):
+            cv2.destroyWindow(winName)
+            break
     
     
     
