@@ -6,26 +6,24 @@ import cv2
 
 VERSION_FORMAT = '%(prog)s 1.0'
 
-sol_img = cv2.imread('sol.png')
-do_img = cv2.imread('do.png')
-re_img = cv2.imread('re.png')
 black_mov_path = 'videos/black.wmv'
-sol_mov_path = 'videos/sol.wmv'
-do_mov_path = 'videos/do.wmv'
-re_mov_path = 'videos/re.wmv'
-black_img = cv2.imread('black.png')
-
-winName = "Display"
-cv2.namedWindow(winName, cv2.CV_WINDOW_AUTOSIZE)
+videos_root_db = 'videos'
+videos_dir = os.path.join(videos_root_db, 'eli_plays')
 
 class MidiInputCallback(object):
-    videos = { 72 : do_mov_path,  74 : re_mov_path, 79 : sol_mov_path}
     
     # elements are (should_play, video_name)
     video_messages = Queue.deque()
+    
     def __init__(self, midiout, do_prints=False):
         self.midiout = midiout
         self.do_prints = do_prints
+        
+        self.videos = {}
+        for f in os.listdir(videos_dir):
+            note = int(os.path.splitext(f)[0])
+            vid_path = os.path.join(videos_dir, f)
+            self.videos[note] = vid_path
     
     def __call__(self, message_and_delta, data):
         message, time_delta = message_and_delta
@@ -93,9 +91,6 @@ if __name__ == "__main__":
         # vc.set(cv2.cv.CV_CAP_PROP_POS_FRAMES, 0) # rewind :P
    
         key = cv2.waitKey(38)
-        if key == ord('q'):
-            cv2.destroyWindow(winName)
-            break
     
     
     
