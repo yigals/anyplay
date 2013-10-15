@@ -35,9 +35,9 @@ class MidiInputCallback(object):
         opcode, note, velocity = message
            
         video_path = self.videos.get(message[1], black_mov_path)
-        if opcode == 144:
+        if opcode == 144 and velocity > 0:
             self.video_messages.append((True, video_path))
-        elif opcode == 128:
+        elif opcode == 128 or opcode == 144 and velocity == 0:
             self.video_messages.append((False, video_path))
         
        
