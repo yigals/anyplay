@@ -4,6 +4,8 @@ import os
 import Queue
 import cv2
 
+from VideoCapFile import VideoCapFile
+
 VERSION_FORMAT = '%(prog)s 1.0'
 
 black_mov_path = 'videos/black.wmv'
@@ -74,7 +76,7 @@ if __name__ == "__main__":
         
         if video_name:
             if should_play:
-                currently_playing[video_name] = cv2.VideoCapture(video_name)
+                currently_playing[video_name] = VideoCapFile(video_name)
                 cv2.namedWindow(video_name)
             else:
                 try:
