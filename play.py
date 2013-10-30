@@ -94,12 +94,19 @@ if __name__ == "__main__":
                 except:
                     pass
 
+
+        frames_to_combine = []
         for name in currently_playing.keys():
             vc = currently_playing[name]
             ret, frame = vc.read()
-            if ret: cv2.imshow(winName, frame)
+            if ret: frames_to_combine.append(frame)
             else: currently_playing.pop(name)
-        # vc.set(cv2.cv.CV_CAP_PROP_POS_FRAMES, 0) # rewind :P
+        
+        if frames_to_combine:
+            num_frames = len(frames_to_combine)
+            # divide before sum to avoid overflow. can also use cv2.addWeighted().
+            frame = sum([x/num_frames for x in frames_to_combine])
+            cv2.imshow(winName, frame)
    
         key = cv2.waitKey(38)
         if key == ord('q'):
