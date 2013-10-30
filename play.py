@@ -45,6 +45,13 @@ class MidiInputCallback(object):
         elif opcode == 128 or opcode == 144 and velocity == 0:
             self.video_messages.append((False, video_path))
         
+        
+def skip_video_percentage(v, skip_seconds=0.3):
+    "skip skip_seconds of video v"
+    fps = v.get(cv2.cv.CV_CAP_PROP_FPS)
+    for i in xrange(int(fps * skip_seconds)):
+        v.read()
+    
        
 if __name__ == "__main__":
     midiout = rtmidi.MidiOut()
@@ -80,6 +87,7 @@ if __name__ == "__main__":
         if video_name:
             if should_play:
                 currently_playing[video_name] = VideoCapFile(video_name)
+                skip_video_percentage(currently_playing[video_name])
             else:
                 try:
                     currently_playing.pop(video_name)
