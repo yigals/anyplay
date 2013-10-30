@@ -51,6 +51,34 @@ def skip_video_percentage(v, skip_seconds=0.3):
     fps = v.get(cv2.cv.CV_CAP_PROP_FPS)
     for i in xrange(int(fps * skip_seconds)):
         v.read()
+        
+def set_next_action(vid_msgs):
+    if vid_msgs:
+        should_play, video_name = vid_msgs.pop()
+        if should_play:
+            currently_playing[video_name] = VideoCapFile(video_name)
+            skip_video_percentage(currently_playing[video_name])
+        else:
+            try:
+                currently_playing.pop(video_name)
+            except:
+                pass
+
+
+def next_frame_weighted(cur_vids):
+    frames_to_combine = []
+    for name in cur_vids.keys():
+        vc = cur_vids[name]
+        ret, frame = vc.read()
+        if ret: frames_to_combine.append(frame)
+        else: cur_vids.pop(name)
+    
+    if frames_to_combine:
+        num_frames = len(frames_to_combine)
+        # divide before sum to avoid overflow. can also use cv2.addWeighted().
+        return True, sum([x/num_frames for x in frames_to_combine])
+    
+    return False, None
     
        
 if __name__ == "__main__":
@@ -81,29 +109,10 @@ if __name__ == "__main__":
     
     currently_playing = {}
     while True:
-        if MidiInCb.video_messages:
-            should_play, video_name = MidiInCb.video_messages.pop()
-            if should_play:
-                currently_playing[video_name] = VideoCapFile(video_name)
-                skip_video_percentage(currently_playing[video_name])
-            else:
-                try:
-                    currently_playing.pop(video_name)
-                except:
-                    pass
+        set_next_action(MidiInCb.video_messages)
 
-
-        frames_to_combine = []
-        for name in currently_playing.keys():
-            vc = currently_playing[name]
-            ret, frame = vc.read()
-            if ret: frames_to_combine.append(frame)
-            else: currently_playing.pop(name)
-        
-        if frames_to_combine:
-            num_frames = len(frames_to_combine)
-            # divide before sum to avoid overflow. can also use cv2.addWeighted().
-            frame = sum([x/num_frames for x in frames_to_combine])
+        ret, frame = next_frame_weighted(currently_playing)
+        if ret:
             cv2.imshow(winName, frame)
    
         key = cv2.waitKey(38)
