@@ -12,6 +12,9 @@ black_mov_path = 'videos/black.wmv'
 videos_root_db = 'videos'
 videos_dir = os.path.join(videos_root_db, 'eli_plays')
 
+winName = 'Display'
+cv2.namedWindow(winName)
+
 class MidiInputCallback(object):
     
     # elements are (should_play, video_name)
@@ -77,10 +80,8 @@ if __name__ == "__main__":
         if video_name:
             if should_play:
                 currently_playing[video_name] = VideoCapFile(video_name)
-                cv2.namedWindow(video_name)
             else:
                 try:
-                    cv2.destroyWindow(video_name)
                     currently_playing.pop(video_name)
                 except:
                     pass
@@ -88,11 +89,14 @@ if __name__ == "__main__":
         for name in currently_playing.keys():
             vc = currently_playing[name]
             ret, frame = vc.read()
-            if ret: cv2.imshow(name, frame)
+            if ret: cv2.imshow(winName, frame)
             else: currently_playing.pop(name)
         # vc.set(cv2.cv.CV_CAP_PROP_POS_FRAMES, 0) # rewind :P
    
         key = cv2.waitKey(38)
+        if key == ord('q'):
+            cv2.destroyAllWindows()
+            break
     
     
     
