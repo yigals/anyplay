@@ -81,10 +81,8 @@ if __name__ == "__main__":
     
     currently_playing = {}
     while True:
-        try: should_play, video_name = MidiInCb.video_messages.pop()
-        except IndexError: video_name = ""
-        
-        if video_name:
+        if MidiInCb.video_messages:
+            should_play, video_name = MidiInCb.video_messages.pop()
             if should_play:
                 currently_playing[video_name] = VideoCapFile(video_name)
                 skip_video_percentage(currently_playing[video_name])
