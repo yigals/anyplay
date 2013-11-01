@@ -20,8 +20,7 @@ class MidiInputCallback(object):
     # elements are (should_play, video_name)
     video_messages = Queue.deque()
     
-    def __init__(self, midiout, do_prints=False):
-        self.midiout = midiout
+    def __init__(self, do_prints=False):
         self.do_prints = do_prints
         
         self.videos = {}
@@ -34,11 +33,9 @@ class MidiInputCallback(object):
         message, time_delta = message_and_delta
         if self.do_prints:
             sys.stdout.write("%s, %s\n" % (time_delta, message))
-        #play sound
-        self.midiout.send_message(message)
             
         opcode, note, velocity = message
-           
+        
         video_path = self.videos.get(message[1], black_mov_path)
         if opcode == 144 and velocity > 0:
             self.video_messages.append((True, video_path))
@@ -82,29 +79,32 @@ def next_frame_weighted(cur_vids):
     
        
 if __name__ == "__main__":
-    midiout = rtmidi.MidiOut()
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='Receives MIDI messages from a'
+        'midi interface and displays videos of people playing the corresponding'
+        'notes.')
+    parser.add_argument('--midi_in', help="If not specified, the first port that looks like a loopback port is chosen")
+    parser.add_argument('--verbose_midi_input', action='store_true')
+    parser.add_argument('--version', action='version', version=VERSION_FORMAT)
+    args = parser.parse_args()
+    
     midiin = rtmidi.MidiIn()
-    out_ports = midiout.get_ports()
-    out_port = out_ports.index('LoopBe Internal MIDI')
-    midiout.open_port(out_port)
-    print "MIDI sent to %s" % ('LoopBe Internal MIDI', )
-
-    # if not args.no_midi_in:
-    if not 0:
-        in_ports = midiin.get_ports()
-        # if args.midi_in is not None:
-        if 0:
-            in_port = in_ports.index(args.midi_in)
+    in_ports = midiin.get_ports()
+    if args.midi_in is not None:
+        in_port = in_ports.index(args.midi_in)
+        in_port_name = args.midi_in
+    else:
+        for in_port, in_port_name in enumerate(in_ports):
+            if "Yoke" in in_port_name or "Creative" in in_port_name or "Loop" in in_port_name:
+                break
         else:
-            for in_port, in_port_name in enumerate(in_ports):
-                if "Yoke" not in in_port_name and "Creative" not in in_port_name and "Loop" not in in_port_name:
-                    break
-            else:
-                raise ValueError("No suitable MIDI input port found")
-        midiin.open_port(in_port)
-        print "MIDI received from %s" % (in_port_name, )
-        MidiInCb = MidiInputCallback(midiout, do_prints=True)
-        midiin.set_callback(MidiInCb)
+            raise ValueError("No MIDI loopback port found.\n"
+                "To receive input from a keyboard, specify its name with --midi_in")
+    midiin.open_port(in_port)
+    print "MIDI received from %s" % (in_port_name, )
+    MidiInCb = MidiInputCallback(do_prints=args.verbose_midi_input)
+    midiin.set_callback(MidiInCb)
     
     
     currently_playing = {}
