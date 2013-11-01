@@ -43,18 +43,17 @@ class MidiInputCallback(object):
             self.video_messages.append((False, video_path))
         
         
-def skip_video_percentage(v, skip_seconds=0.3):
-    "skip skip_seconds of video v"
-    fps = v.get(cv2.cv.CV_CAP_PROP_FPS)
-    for i in xrange(int(fps * skip_seconds)):
-        v.read()
-        
+captures = {}
 def set_next_action(vid_msgs):
     if vid_msgs:
         should_play, video_name = vid_msgs.pop()
         if should_play:
-            currently_playing[video_name] = VideoCapFile(video_name)
-            skip_video_percentage(currently_playing[video_name])
+            if video_name not in captures.keys():
+                captures[video_name] = VideoCapFile(video_name)
+            cur_vid = captures[video_name]
+            # cur_vid.set(cv2.cv.CV_CAP_PROP_POS_FRAMES, 0) # rewind
+            cur_vid.set(cv2.cv.CV_CAP_PROP_POS_MSEC, 300)
+            currently_playing[video_name] = cur_vid
         else:
             try:
                 currently_playing.pop(video_name)
