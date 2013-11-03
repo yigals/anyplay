@@ -34,6 +34,9 @@ class MidiInputCallback(object):
         if self.do_prints:
             sys.stdout.write("%s, %s\n" % (time_delta, message))
             
+        if message[0] not in [144, 128]:
+            return
+
         opcode, note, velocity = message
         
         video_path = self.videos.get(message[1], black_mov_path)
