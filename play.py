@@ -16,34 +16,43 @@ winName = 'Display'
 cv2.namedWindow(winName)
 
 class MidiInputCallback(object):
+    '''Turns NoteOn and NoteOff midi events to (on_or_off, corresponding_note_video_path)
+       messages on the message_queue.'''
     
-    # elements are (should_play, video_name)
-    video_messages = Queue.deque()
-    
-    def __init__(self, do_prints=False):
+    def __init__(self, channels=None, do_prints=False):
         self.do_prints = do_prints
+        self.channels = channels
+        self.message_queue = Queue.deque()
         
-        self.videos = {}
+        self.video_paths = {}
         for f in os.listdir(videos_dir):
             note = int(os.path.splitext(f)[0])
+            # Videos are named with the note number only. Description can be put
+            # in the folder name.
             vid_path = os.path.join(videos_dir, f)
-            self.videos[note] = vid_path
+            self.video_paths[note] = vid_path
     
     def __call__(self, message_and_delta, data):
         message, time_delta = message_and_delta
+        
+        channel = message[0] & 0x0F
+        opcode = message[0] & 0xF0
+        
         if self.do_prints:
-            sys.stdout.write("%s, %s\n" % (time_delta, message))
-            
-        if message[0] not in [144, 128]:
+            sys.stdout.write("%s, 0x%X, %d, %s\n" % (time_delta, opcode, channel, message[1:]))
+        
+        if opcode not in [144, 128]:
+            return
+        if self.channels is not None and channel not in self.channels:
             return
 
-        opcode, note, velocity = message
+        note, velocity = message[1:]
         
-        video_path = self.videos.get(message[1], black_mov_path)
+        video_path = self.video_paths.get(message[1], black_mov_path)
         if opcode == 144 and velocity > 0:
-            self.video_messages.append((True, video_path))
+            self.message_queue.append((True, video_path))
         elif opcode == 128 or opcode == 144 and velocity == 0:
-            self.video_messages.append((False, video_path))
+            self.message_queue.append((False, video_path))
         
         
 captures = {}
@@ -88,6 +97,7 @@ if __name__ == "__main__":
         'notes.')
     parser.add_argument('--midi_in', help="If not specified, the first port that looks like a loopback port is chosen")
     parser.add_argument('--verbose_midi_input', action='store_true')
+    parser.add_argument('--midi_channels', type=int, nargs='*', metavar='CHANf')
     parser.add_argument('--version', action='version', version=VERSION_FORMAT)
     args = parser.parse_args()
     
@@ -105,7 +115,12 @@ if __name__ == "__main__":
                 "To receive input from a keyboard, specify its name with --midi_in")
     midiin.open_port(in_port)
     print "MIDI received from %s" % (in_port_name, )
-    MidiInCb = MidiInputCallback(do_prints=args.verbose_midi_input)
+    MidiInCb = MidiInputCallback(channels=args.midi_channels,
+                                 do_prints=args.verbose_midi_input)
+    if args.midi_channels is not None:
+        print "Playing channels %s" % (args.midi_channels, )
+    else:
+        print "Playing all channels"
     midiin.set_callback(MidiInCb)
     
     
