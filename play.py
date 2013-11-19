@@ -4,12 +4,14 @@ import os
 import Queue
 import cv2
 
-from VideoCapFile import VideoCapFile
+from VideoOnOffTracker import VideoOnOffTracker
+from VideoCapFile import VideoCapCombiner
 
 VERSION_FORMAT = '%(prog)s 1.0'
 
 black_mov_path = 'videos/black.wmv'
-videos_root_db = 'videos'
+# This one is packaged with the code
+videos_root_db = r'C:\users\eli\videos\debut'
 videos_dir = os.path.join(videos_root_db, 'eli_plays')
 
 winName = 'Display'
@@ -55,40 +57,26 @@ class MidiInputCallback(object):
             self.message_queue.append((False, video_path))
         
         
-captures = {}
-def set_next_action(vid_msgs):
-    if vid_msgs:
-        should_play, video_name = vid_msgs.pop()
-        if should_play:
-            if video_name not in captures.keys():
-                captures[video_name] = VideoCapFile(video_name)
-            cur_vid = captures[video_name]
-            # cur_vid.set(cv2.cv.CV_CAP_PROP_POS_FRAMES, 0) # rewind
-            cur_vid.set(cv2.cv.CV_CAP_PROP_POS_MSEC, 300)
-            currently_playing[video_name] = cur_vid
-        else:
-            try:
-                currently_playing.pop(video_name)
-            except:
-                pass
+def run(message_queue):
+    'Finishes when exit_key is entered'
+    exit_key = ord('q')
+    on_off_tracker = VideoOnOffTracker()
+    combiner = VideoCapCombiner()
+    
+    while True:
+        currently_playing = on_off_tracker.process(message_queue)
+
+        ret, frame = combiner.read(currently_playing)
+        if ret:
+            cv2.imshow(winName, frame)
+   
+        key = cv2.waitKey(38)
+        # FIXME: A magic number if I ever saw one
+        if key == exit_key:
+            cv2.destroyAllWindows()
+            break
 
 
-def next_frame_weighted(cur_vids):
-    frames_to_combine = []
-    for name in cur_vids.keys():
-        vc = cur_vids[name]
-        ret, frame = vc.read()
-        if ret: frames_to_combine.append(frame)
-        else: cur_vids.pop(name)
-    
-    if frames_to_combine:
-        num_frames = len(frames_to_combine)
-        # divide before sum to avoid overflow. can also use cv2.addWeighted().
-        return True, sum([x/num_frames for x in frames_to_combine])
-    
-    return False, None
-    
-       
 if __name__ == "__main__":
     import argparse
     
@@ -123,19 +111,4 @@ if __name__ == "__main__":
         print "Playing all channels"
     midiin.set_callback(MidiInCb)
     
-    
-    currently_playing = {}
-    while True:
-        set_next_action(MidiInCb.video_messages)
-
-        ret, frame = next_frame_weighted(currently_playing)
-        if ret:
-            cv2.imshow(winName, frame)
-   
-        key = cv2.waitKey(38)
-        if key == ord('q'):
-            cv2.destroyAllWindows()
-            break
-    
-    
-    
+    run(MidiInCb.message_queue)
