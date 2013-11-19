@@ -26,3 +26,25 @@ class VideoCapFile(object):
     
     def __getattr__(self, att):
         return getattr(self._capture, att)
+
+
+class VideoCapCombiner(object):
+    'Combines currently_playing videos. May have state in the future.'
+
+    def read(self, currently_playing):
+        '''Returns a new frame which is a combination of the new frames of the
+           given dict of cv2.VideoCapture-like files.
+           Note: The function removes finished/faulty videos from the set.
+           cv2.VideoCapture-style return value'''
+        frames_to_combine = []
+        for name, video_cap in currently_playing.items():
+        # Can't iteritems since we're changing the dict while iterating.
+            ret, frame = video_cap.read()
+            if ret: frames_to_combine.append(frame)
+            else: currently_playing.pop(name, None) # del if exists
+
+        if frames_to_combine:
+            num_frames = len(frames_to_combine)
+            # divide before sum to avoid overflow. can also use cv2.addWeighted().
+            return True, sum([x/num_frames for x in frames_to_combine])
+        return False, None
