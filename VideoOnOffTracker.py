@@ -28,7 +28,7 @@ class VideoOnOffTracker(object):
     def process(self, message_queue):
         '''Updates the currently_playing dict according to the messages.
            Returns the updated currently_playing dict'''
-        if message_queue:
+        while message_queue:
             should_play, video_name = message_queue.popleft()
             if should_play:
                 cur_vid = self.captures_cache[video_name]
