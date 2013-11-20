@@ -85,7 +85,7 @@ if __name__ == "__main__":
         'notes.')
     parser.add_argument('-i', '--midi_in', help="If not specified, the first port that looks like a loopback port is chosen")
     parser.add_argument('-v', '--verbose_midi_input', action='store_true')
-    parser.add_argument('-m', '--midi_channels', type=int, nargs='*', metavar='CHANf')
+    parser.add_argument('-m', '--midi_channels', type=int, nargs='*', metavar='CHAN')
     parser.add_argument('--version', action='version', version=VERSION_FORMAT)
     args = parser.parse_args()
     
