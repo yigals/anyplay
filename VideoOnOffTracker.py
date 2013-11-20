@@ -29,7 +29,7 @@ class VideoOnOffTracker(object):
         '''Updates the currently_playing dict according to the messages.
            Returns the updated currently_playing dict'''
         if message_queue:
-            should_play, video_name = message_queue.pop()
+            should_play, video_name = message_queue.popleft()
             if should_play:
                 cur_vid = self.captures_cache[video_name]
                 # cur_vid.set(cv2.cv.CV_CAP_PROP_POS_FRAMES, 0) # rewind
