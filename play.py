@@ -9,9 +9,9 @@ from VideoCapFile import VideoCapCombiner
 
 VERSION_FORMAT = '%(prog)s 1.0'
 
-black_mov_path = 'videos/black.wmv'
 # This one is packaged with the code
-videos_root_db = r'C:\users\eli\videos\debut'
+black_mov_path = 'videos/black.wmv'
+videos_root_db = 'videos/'
 videos_dir = os.path.join(videos_root_db, 'eli_plays')
 
 winName = 'Display'
