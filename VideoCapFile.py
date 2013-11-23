@@ -2,7 +2,7 @@ import cv2
 
 def avoid_end_lag(func):
     def decor(self):
-        if self._read_frames == self._num_frames:
+        if self._read_frames == self._num_frames - 1:
             return False, None
         else: 
             self._read_frames += 1
@@ -15,6 +15,8 @@ class VideoCapFile(object):
         self._capture = cv2.VideoCapture(video)
         self._read_frames = 0
         self._num_frames = int(self._capture.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
+        fps = int(self._capture.get(cv2.cv.CV_CAP_PROP_FPS))
+        self._ms = self._num_frames*1000.0/fps
 
     @avoid_end_lag
     def read(self):
@@ -23,7 +25,12 @@ class VideoCapFile(object):
     @avoid_end_lag
     def retrieve(self):
         return self._capture.retrieve()
-    
+        
+    def set(self, propId, value):
+        if propId == cv2.cv.CV_CAP_PROP_POS_MSEC: # value is in ms
+            self._read_frames = int(value * 1.0 / self._ms * self._num_frames)
+        return self._capture.set(propId, value)
+            
     def __getattr__(self, att):
         return getattr(self._capture, att)
 
