@@ -9,8 +9,6 @@ from VideoCapFile import VideoCapCombiner
 
 VERSION_FORMAT = '%(prog)s 1.0'
 
-# This one is packaged with the code
-black_mov_path = 'videos/black.wmv'
 videos_root_db = 'videos/'
 videos_dir = os.path.join(videos_root_db, 'eli_plays')
 
@@ -50,7 +48,11 @@ class MidiInputCallback(object):
 
         note, velocity = message[1:]
         
-        video_path = self.video_paths.get(message[1], black_mov_path)
+        try:
+            video_path = self.video_paths[note]
+        except KeyError:
+            sys.stdout.write("Key %d is missing from video_paths\n" % (note, ))
+            return
         if opcode == 144 and velocity > 0:
             self.message_queue.append((True, video_path))
         elif opcode == 128 or velocity == 0:
