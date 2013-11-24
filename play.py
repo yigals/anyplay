@@ -6,7 +6,7 @@ import Queue
 import cv2
 
 from VideoOnOffTracker import VideoOnOffTracker
-from VideoCapFile import VideoCapCombiner, VideoCombinedWriter
+from VideoFiles import VideoCapCombiner, VideoCombinedWriter
 
 VERSION_FORMAT = '%(prog)s 1.0'
 
