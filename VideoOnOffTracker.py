@@ -1,7 +1,7 @@
 from collections import defaultdict
 import cv2
 
-from VideoCapFile import VideoCapFile
+from VideoFiles import VideoCapFile
 
 class keydefaultdict(defaultdict):
     '''Like defaultdict, but the default_factory function is called with the
