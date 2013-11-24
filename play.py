@@ -10,9 +10,6 @@ from VideoFiles import VideoCapCombiner, VideoCombinedWriter
 
 VERSION_FORMAT = '%(prog)s 1.0'
 
-videos_root_db = 'videos/'
-videos_dir = os.path.join(videos_root_db, 'shenk_plays')
-
 winName = 'Display'
 cv2.namedWindow(winName)
 
@@ -33,7 +30,7 @@ class MidiInputCallback(object):
         opcode = message[0] & 0xF0
         
         if self.do_prints:
-            sys.stdout.write("%s, 0x%X, %d, %s\n" % (time_delta, opcode, channel, message[1:]))
+            sys.stdout.write("%s, 0x%X, %d, %s\n" % (time_delta, opcode, channel, message[1:]) if opcode in [144, 128] else "")
         
         if opcode not in [144, 128]:
             return
@@ -90,6 +87,7 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--midi_in', help="If not specified, the first port that looks like a loopback port is chosen")
     parser.add_argument('-v', '--verbose_midi_input', action='store_true')
     parser.add_argument('-o', '--out_vid', action='store_true', help="If specified, video is being saved to results dir")
+    parser.add_argument('-d', '--videos_dir', default='shenk_plays', help="Dir from which to take videos. Should be absolute or placed under videos dir")
     parser.add_argument('-m', '--midi_channels', type=int, nargs='*', metavar='CHAN')
     parser.add_argument('--version', action='version', version=VERSION_FORMAT)
     args = parser.parse_args()
@@ -109,6 +107,7 @@ if __name__ == "__main__":
     midiin.open_port(in_port)
     print "MIDI received from %s" % (in_port_name, )
     
+    videos_dir = args.videos_dir if os.path.isabs(args.videos_dir) else os.path.join('videos', args.videos_dir)
     video_paths = {}
     for f in os.listdir(videos_dir):
         note = int(os.path.splitext(f)[0])
