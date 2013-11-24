@@ -1,12 +1,15 @@
+import os
+import time
 import cv2
 
 def avoid_end_lag(func):
     def decor(self):
         if self._read_frames == self._num_frames - 1:
-            return False, None
+            return False, self._last_frame
         else: 
             self._read_frames += 1
-            return func(self)
+            res, self._last_frame = func(self)
+            return res, self._last_frame
     
     return decor
     
@@ -46,12 +49,47 @@ class VideoCapCombiner(object):
         frames_to_combine = []
         for name, video_cap in currently_playing.items():
         # Can't iteritems since we're changing the dict while iterating.
-            ret, frame = video_cap.read()
-            if ret: frames_to_combine.append(frame)
-            else: currently_playing.pop(name, None) # del if exists
+            ret, frame = video_cap.read() 
+            # VideoCapFile returns False, last_frame at end of file instead False, None
+            if frame is not None: frames_to_combine.append(frame)
 
         if frames_to_combine:
             num_frames = len(frames_to_combine)
             # divide before sum to avoid overflow. can also use cv2.addWeighted().
             return True, sum([x/num_frames for x in frames_to_combine])
         return False, None
+
+
+class BadVideosError(Exception):
+    pass
+
+
+class VideoCombinedWriter(object):
+    'Writes results to a file. Also, performs a sanity check of the given videos.'
+
+    def __init__(self, video_paths):
+        videos = [(os.path.basename(vid_path), cv2.VideoCapture(vid_path)) for vid_path in video_paths.values()]
+        vid_props = [(name, (int(v.get(cv2.cv.CV_CAP_PROP_FPS)),
+                              int(v.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)),
+                              int(v.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))))
+                              for name, v in videos]
+        fourcc = int(videos[0][1].get(cv2.cv.CV_CAP_PROP_FOURCC))
+        [v.release() for _, v in videos]
+        bad_vids = [x[0] for x in vid_props if x[1] != vid_props[0][1]]
+        if bad_vids:
+            raise BadVideosError("Videos with different properties: %s" % (x, ))
+        
+        fps, w, h = vid_props[0][1]
+        self._vidname = time.strftime("%y_%m_%d__%H_%M_%S") + '.avi'
+        try: 
+            self._video = cv2.VideoWriter(self._vidname, fourcc, fps, (w, h))
+            assert self._video.isOpened() # If the last line fails, it's silently...
+        except Exception:
+            self._video = cv2.VideoWriter(self._vidname, cv2.cv.CV_FOURCC('X','V','I','D'), fps, (w, h))
+            # Not asserting here... no vid will be written but output will be displayed.
+            
+    def write(self, frame):
+        self._video.write(frame)
+        
+    def release(self):
+        self._video.release()
