@@ -3,3 +3,4 @@ Install the python-rtmidi module from http://pypi.python.org/pypi/python-rtmidi
 Install the LoopBe1 MIDI loopback device from http://www.nerds.de/en/loopbe1.html
 Install a synthesizer such as Arturia Brass or String Studio to receive messages from the same end of the MIDI loop alongside the Python program.
 Install OpenCV's python module from http://www.lfd.uci.edu/~gohlke/pythonlibs/#opencv
+You can download ready-made videos (video-fonts) from https://bitbucket.org/yigalsh/anyplay/downloads, and extract them to videos/ folder.
