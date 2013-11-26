@@ -4,6 +4,15 @@ import subprocess
 import re
 import cv2
 
+
+def get_fps_ffprobe(vid):
+    "cv2 lies about certain props..."
+    result = subprocess.Popen(["ffprobe", vid], stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
+    out = result.stdout.read()
+    fps = float(re.findall('(\d\d\.\d\d) fps', out)[0])
+    return fps
+    
+
 def avoid_end_lag(func):
     def decor(self):
         if self._read_frames == self._num_frames - 1:
@@ -20,7 +29,7 @@ class VideoCapFile(object):
         self._capture = cv2.VideoCapture(video)
         self._read_frames = 0
         self._num_frames = int(self._capture.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
-        fps = int(self._capture.get(cv2.cv.CV_CAP_PROP_FPS))
+        fps = get_fps_ffprobe(video)
         self._ms = self._num_frames*1000.0/fps
 
     @avoid_end_lag
@@ -66,13 +75,6 @@ class VideoCapCombiner(object):
 class BadVideosError(Exception):
     pass
 
-
-def get_fps_ffprobe(vid):
-    "cv2 lies about certain props..."
-    result = subprocess.Popen(["ffprobe", vid], stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
-    out = result.stdout.read()
-    fps = float(re.findall('(\d\d\.\d\d) fps', out)[0])
-    return fps
     
 def get_avg_fps(vid_arr):
     "Taking at most 10 first videos since ffprobe takes a lot of time"
