@@ -11,7 +11,6 @@ from VideoFiles import VideoCapCombiner, VideoCombinedWriter, get_avg_fps
 VERSION_FORMAT = '%(prog)s 1.0'
 
 winName = 'Display'
-cv2.namedWindow(winName, cv2.WINDOW_NORMAL)
 
 class MidiInputCallback(object):
     '''Turns NoteOn and NoteOff midi events to (on_or_off, corresponding_note_video_path)
@@ -138,5 +137,6 @@ if __name__ == "__main__":
         print "Playing all channels"
     midiin.set_callback(MidiInCb)
     
+    cv2.namedWindow(winName, cv2.WINDOW_NORMAL)    
     run(args, MidiInCb.message_queue, video_paths)
 
