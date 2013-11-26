@@ -92,6 +92,7 @@ if __name__ == "__main__":
         'midi interface and displays videos of people playing the corresponding'
         'notes.')
     parser.add_argument('-i', '--midi_in', help="If not specified, the first port that looks like a loopback port is chosen. Can also specify keyboard as midi input")
+    parser.add_argument('-l', '--list_midi_inputs', action="store_true", help="Prints midi input port names and exit.")
     parser.add_argument('-v', '--verbose_midi_input', action='store_true')
     parser.add_argument('-o', '--out_vid', action='store_true', help="If specified, video is being saved to results dir")
     parser.add_argument('-d', '--videos_dir', default='shenk_plays', help="Dir from which to take videos. Should be absolute or placed under videos dir")
@@ -101,6 +102,9 @@ if __name__ == "__main__":
     
     midiin = rtmidi.MidiIn()
     in_ports = midiin.get_ports()
+    if args.list_midi_inputs:
+        print "Available midi input ports: %s" % (in_ports, )
+        sys.exit()
     if args.midi_in is not None:
         try:
             in_port = in_ports.index(args.midi_in)
