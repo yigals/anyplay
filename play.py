@@ -6,7 +6,7 @@ import Queue
 import cv2
 
 from VideoOnOffTracker import VideoOnOffTracker
-from VideoFiles import VideoCapCombiner, VideoCombinedWriter
+from VideoFiles import VideoCapCombiner, VideoCombinedWriter, get_avg_fps
 
 VERSION_FORMAT = '%(prog)s 1.0'
 
@@ -55,10 +55,7 @@ def run(args, message_queue, video_paths):
     exit_key = ord('q')
     on_off_tracker = VideoOnOffTracker()
     combiner = VideoCapCombiner()
-    # Getting the FPS from an arbitrary video:
-    somevid = cv2.VideoCapture(video_paths.values()[0])
-    fps = somevid.get(cv2.cv.CV_CAP_PROP_FPS)
-    somevid.release()
+    fps = get_avg_fps(video_paths.values())
     
     if args.out_vid:
         writer = VideoCombinedWriter(video_paths)
