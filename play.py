@@ -29,8 +29,8 @@ class MidiInputCallback(object):
         channel = message[0] & 0x0F
         opcode = message[0] & 0xF0
         
-        if self.do_prints:
-            sys.stdout.write("%s, 0x%X, %d, %s\n" % (time_delta, opcode, channel, message[1:]) if opcode in [144, 128] else "")
+        if self.do_prints and opcode in [144, 128]:
+            sys.stdout.write("%s, 0x%X, %d, %s\n" % (time_delta, opcode, channel, message[1:]))
         
         if opcode not in [144, 128]:
             return
