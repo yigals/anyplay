@@ -32,6 +32,8 @@ class VideoCapFile(object):
     def set(self, propId, value):
         if propId == cv2.cv.CV_CAP_PROP_POS_MSEC: # value is in ms
             self._read_frames = int(value * 1.0 / self._ms * self._num_frames)
+        elif propId == cv2.cv.CV_CAP_PROP_POS_FRAMES: # value is in frames
+            self._read_frames = value
         return self._capture.set(propId, value)
             
     def __getattr__(self, att):
@@ -44,7 +46,6 @@ class VideoCapCombiner(object):
     def read(self, currently_playing):
         '''Returns a new frame which is a combination of the new frames of the
            given dict of cv2.VideoCapture-like files.
-           Note: The function removes finished/faulty videos from the set.
            cv2.VideoCapture-style return value'''
         frames_to_combine = []
         for name, video_cap in currently_playing.items():
@@ -74,16 +75,19 @@ class VideoCombinedWriter(object):
                               int(v.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))))
                               for name, v in videos]
         fourcc = int(videos[0][1].get(cv2.cv.CV_CAP_PROP_FOURCC))
-        [v.release() for _, v in videos]
+        for _, v in videos:
+            v.release()
+        # Find videos that don't conform to the arbitrarily chosen first video:
         bad_vids = [x[0] for x in vid_props if x[1] != vid_props[0][1]]
         if bad_vids:
-            raise BadVideosError("Videos with different properties: %s" % (x, ))
+            raise BadVideosError("Videos with properties different than those of %s: %s" % (vid_props[0][0], bad_vids, ))
         
         fps, w, h = vid_props[0][1]
+
         self._vidname = time.strftime("%y_%m_%d__%H_%M_%S") + '.avi'
         try: 
             self._video = cv2.VideoWriter(self._vidname, fourcc, fps, (w, h))
-            assert self._video.isOpened() # If the last line fails, it's silently...
+            assert self._video.isOpened() # If the above line fails, it's silently...
         except Exception:
             self._video = cv2.VideoWriter(self._vidname, cv2.cv.CV_FOURCC('X','V','I','D'), fps, (w, h))
             # Not asserting here... no vid will be written but output will be displayed.
