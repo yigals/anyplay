@@ -1,5 +1,7 @@
 import os
 import time
+import subprocess
+import re
 import cv2
 
 def avoid_end_lag(func):
@@ -65,13 +67,26 @@ class BadVideosError(Exception):
     pass
 
 
+def get_fps_ffprobe(vid):
+    "cv2 lies about certain props..."
+    result = subprocess.Popen(["ffprobe", vid], stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
+    out = result.stdout.read()
+    fps = float(re.findall('(\d\d\.\d\d) fps', out)[0])
+    return fps
+    
+def get_avg_fps(vid_arr):
+    "Taking at most 10 first videos since ffprobe takes a lot of time"
+    num = min(10, len(vid_arr))
+    fpss = [get_fps_ffprobe(vid) for vid in vid_arr[:num]]
+    return sum(fpss) / num
+
+
 class VideoCombinedWriter(object):
     'Writes results to a file. Also, performs a sanity check of the given videos.'
 
     def __init__(self, video_paths):
         videos = [(os.path.basename(vid_path), cv2.VideoCapture(vid_path)) for vid_path in video_paths.values()]
-        vid_props = [(name, (int(v.get(cv2.cv.CV_CAP_PROP_FPS)),
-                              int(v.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)),
+        vid_props = [(name, (int(v.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)),
                               int(v.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))))
                               for name, v in videos]
         fourcc = int(videos[0][1].get(cv2.cv.CV_CAP_PROP_FOURCC))
@@ -82,8 +97,9 @@ class VideoCombinedWriter(object):
         if bad_vids:
             raise BadVideosError("Videos with properties different than those of %s: %s" % (vid_props[0][0], bad_vids, ))
         
-        fps, w, h = vid_props[0][1]
-
+        w, h = vid_props[0][1]
+        fps = int(round(get_avg_fps(video_paths.values())))
+        
         self._vidname = time.strftime("%y_%m_%d__%H_%M_%S") + '.avi'
         try: 
             self._video = cv2.VideoWriter(self._vidname, fourcc, fps, (w, h))
