@@ -55,11 +55,16 @@ def run(args, message_queue, video_paths):
     exit_key = ord('q')
     on_off_tracker = VideoOnOffTracker()
     combiner = VideoCapCombiner()
+    # Getting the FPS from an arbitrary video:
+    somevid = cv2.VideoCapture(video_paths.values()[0])
+    fps = somevid.get(cv2.cv.CV_CAP_PROP_FPS)
+    somevid.release()
     
     if args.out_vid:
         writer = VideoCombinedWriter(video_paths)
     
     while True:
+        iteration_start = time.time()
         currently_playing = on_off_tracker.process(message_queue)
 
         ret, frame = combiner.read(currently_playing)
@@ -67,15 +72,16 @@ def run(args, message_queue, video_paths):
             cv2.imshow(winName, frame)
             if args.out_vid: writer.write(frame)
    
-        key = cv2.waitKey(38)
-        # FIXME: A magic number if I ever saw one
+        processing_time = time.time() - iteration_start
+        key = cv2.waitKey(int(1000./fps - processing_time))
         if key == exit_key:
             cv2.destroyAllWindows()
             break
 
     if args.out_vid: 
         writer.release()
-        os.mkdir('results')
+        if not os.path.exists('results'):
+            os.mkdir('results')
         os.rename(writer._vidname, os.path.join('results', writer._vidname)) # VideoWriter can't get results/asd.avi
         
 

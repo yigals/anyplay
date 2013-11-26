@@ -1,5 +1,5 @@
 Install Python, obviously.
-For now, download the source code
+For now, download the source code of the project.
 Install the python-rtmidi module from http://pypi.python.org/pypi/python-rtmidi
 Install the LoopBe1 MIDI loopback device from http://www.nerds.de/en/loopbe1.html
     Alternatively, use loopmidi from www.tobias-erichsen.de/software/loopmidi.html
