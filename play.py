@@ -80,8 +80,9 @@ def run(args, message_queue, video_paths):
 
     if args.out_vid: 
         writer.release()
-        if not os.path.exists('results'):
-            os.mkdir('results')
+        results_path = os.path.join(os.path.dirname(__file__), 'results')
+        if not os.path.exists(results_path):
+            os.mkdir(results_path)
         os.rename(writer._vidname, os.path.join('results', writer._vidname)) # VideoWriter can't get results/asd.avi
         
 
