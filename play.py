@@ -85,7 +85,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Receives MIDI messages from a'
         'midi interface and displays videos of people playing the corresponding'
         'notes.')
-    parser.add_argument('-i', '--midi_in', help="If not specified, the first port that looks like a loopback port is chosen")
+    parser.add_argument('-i', '--midi_in', help="If not specified, the first port that looks like a loopback port is chosen. Can also specify keyboard as midi input")
     parser.add_argument('-v', '--verbose_midi_input', action='store_true')
     parser.add_argument('-o', '--out_vid', action='store_true', help="If specified, video is being saved to results dir")
     parser.add_argument('-d', '--videos_dir', default='shenk_plays', help="Dir from which to take videos. Should be absolute or placed under videos dir")
@@ -96,15 +96,17 @@ if __name__ == "__main__":
     midiin = rtmidi.MidiIn()
     in_ports = midiin.get_ports()
     if args.midi_in is not None:
-        in_port = in_ports.index(args.midi_in)
+        try:
+            in_port = in_ports.index(args.midi_in)
+        except ValueError:
+            raise ValueError("%s is not a valid input midi port. Available ports are %s\n" % (args.midi_in, in_ports))
         in_port_name = args.midi_in
     else:
         for in_port, in_port_name in enumerate(in_ports):
-            if "Yoke" in in_port_name or "Creative" in in_port_name or "Loop" in in_port_name:
+            if "loop" in in_port_name.lower():
                 break
         else:
-            raise ValueError("No MIDI loopback port found.\n"
-                "To receive input from a keyboard, specify its name with --midi_in")
+            raise ValueError("No MIDI loopback port found. Available ports for use with --midi_in are %s\n" % (in_ports, ))
     midiin.open_port(in_port)
     print "MIDI received from %s" % (in_port_name, )
     
