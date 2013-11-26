@@ -75,6 +75,7 @@ def run(args, message_queue, video_paths):
 
     if args.out_vid: 
         writer.release()
+        os.mkdir('results')
         os.rename(writer._vidname, os.path.join('results', writer._vidname)) # VideoWriter can't get results/asd.avi
         
 
@@ -110,9 +111,12 @@ if __name__ == "__main__":
     videos_dir = args.videos_dir if os.path.isabs(args.videos_dir) else os.path.join('videos', args.videos_dir)
     video_paths = {}
     for f in os.listdir(videos_dir):
-        note = int(os.path.splitext(f)[0])
-        # Videos are named with the note number only. Description can be put
-        # in the folder name.
+        try:
+            note = int(os.path.splitext(f)[0])
+        except ValueError:
+            # Videos are named with the note number only. Description can be put
+            # in the folder name. Other videos are skipped.
+            continue
         vid_path = os.path.join(videos_dir, f)
         video_paths[note] = vid_path
 
