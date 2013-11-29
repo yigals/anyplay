@@ -5,11 +5,16 @@ import re
 import cv2
 
 
-def get_fps_ffprobe(vid):
-    "cv2 lies about certain props..."
-    result = subprocess.Popen(["ffprobe", vid], stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
-    out = result.stdout.read()
-    fps = float(re.findall('(\d\d\.\d\d) fps', out)[0])
+def get_fps(vid):
+    "cv2 lies about certain props... so preferably use ffprobe"
+    try:
+        result = subprocess.Popen(["ffprobe", vid], stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
+        out = result.stdout.read()
+        fps = float(re.findall('(\d\d\.\d\d) fps', out)[0])
+    except: # no ffprobe or ffprobe failed to get fps
+        v = cv2.VideoCapture(vid)
+        fps = v.get(cv2.cv.CV_CAP_PROP_FPS)
+        v.release()
     return fps
     
 
@@ -29,7 +34,7 @@ class VideoCapFile(object):
         self._capture = cv2.VideoCapture(video)
         self._read_frames = 0
         self._num_frames = int(self._capture.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
-        fps = get_fps_ffprobe(video)
+        fps = get_fps(video)
         self._ms = self._num_frames*1000.0/fps
 
     @avoid_end_lag
@@ -79,7 +84,7 @@ class BadVideosError(Exception):
 def get_avg_fps(vid_arr):
     "Taking at most 10 first videos since ffprobe takes a lot of time"
     num = min(10, len(vid_arr))
-    fpss = [get_fps_ffprobe(vid) for vid in vid_arr[:num]]
+    fpss = [get_fps(vid) for vid in vid_arr[:num]]
     return sum(fpss) / num
 
 
