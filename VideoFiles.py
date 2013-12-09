@@ -9,7 +9,12 @@ def get_fps_ffprobe(vid):
     "cv2 lies about certain props..."
     result = subprocess.Popen(["ffprobe", vid], stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
     out = result.stdout.read()
-    fps = float(re.findall('(\d\d\.\d\d) fps', out)[0])
+    try: 
+        fps = float(re.findall('(\d\d\.?\d?\d?) fps', out)[0])
+    except: # ffmpeg failed to print the fps
+        v = cv2.VideoCapture(vid)
+        fps = v.get(cv2.cv.CV_CAP_PROP_FPS)
+        v.release()
     return fps
     
 
@@ -29,6 +34,7 @@ class VideoCapFile(object):
         self._capture = cv2.VideoCapture(video)
         self._read_frames = 0
         self._num_frames = int(self._capture.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
+        #print video
         fps = get_fps_ffprobe(video)
         self._ms = self._num_frames*1000.0/fps
 
@@ -105,6 +111,7 @@ class VideoCombinedWriter(object):
         self._vidname = time.strftime("%y_%m_%d__%H_%M_%S") + '.avi'
         try: 
             self._video = cv2.VideoWriter(self._vidname, fourcc, fps, (w, h))
+            #self._video = cv2.VideoWriter(self._vidname, -1, fps, (w, h))
             assert self._video.isOpened() # If the above line fails, it's silently...
         except Exception:
             self._video = cv2.VideoWriter(self._vidname, cv2.cv.CV_FOURCC('X','V','I','D'), fps, (w, h))
