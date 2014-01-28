@@ -58,23 +58,27 @@ class VideoCapFile(object):
 
 class VideoCapCombiner(object):
     'Combines currently_playing videos. May have state in the future.'
+    def __init__(self):
+        self._last_combined_frame = None #TODO: black frame here
 
     def read(self, currently_playing):
         '''Returns a new frame which is a combination of the new frames of the
            given dict of cv2.VideoCapture-like files.
            cv2.VideoCapture-style return value'''
         frames_to_combine = []
-        for name, video_cap in currently_playing.items():
-        # Can't iteritems since we're changing the dict while iterating.
+        for name, video_cap in currently_playing.iteritems():
             ret, frame = video_cap.read() 
             # VideoCapFile returns False, last_frame at end of file instead False, None
-            if frame is not None: frames_to_combine.append(frame)
+            if frame is not None:
+                # In case of an internal video file error
+                frames_to_combine.append(frame)
+            # TODO: else: raise an exception?
 
         if frames_to_combine:
             num_frames = len(frames_to_combine)
             # divide before sum to avoid overflow. can also use cv2.addWeighted().
-            return True, sum([x/num_frames for x in frames_to_combine])
-        return False, None
+            self._last_combined_frame = sum([x/num_frames for x in frames_to_combine])
+        return True, self._last_combined_frame
 
 
 class BadVideosError(Exception):
@@ -91,7 +95,7 @@ def get_avg_fps(vid_arr):
 class VideoCombinedWriter(object):
     'Writes results to a file. Also, performs a sanity check of the given videos.'
 
-    def __init__(self, video_paths):
+    def __init__(self, video_paths, vid_name):
         videos = [(os.path.basename(vid_path), cv2.VideoCapture(vid_path)) for vid_path in video_paths.values()]
         vid_props = [(name, (int(v.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)),
                               int(v.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))))
@@ -107,7 +111,7 @@ class VideoCombinedWriter(object):
         w, h = vid_props[0][1]
         fps = int(round(get_avg_fps(video_paths.values())))
         
-        self._vidname = time.strftime("%y_%m_%d__%H_%M_%S") + '.avi'
+        self._vidname = vid_name
         try: 
             self._video = cv2.VideoWriter(self._vidname, fourcc, fps, (w, h))
             assert self._video.isOpened() # If the above line fails, it's silently...
