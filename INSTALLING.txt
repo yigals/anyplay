@@ -1,13 +1,5 @@
 Install Python, obviously.
 For now, download the source code of the project.
-Install the python-rtmidi module from http://pypi.python.org/pypi/python-rtmidi
-Install the LoopBe1 MIDI loopback device from http://www.nerds.de/en/loopbe1.html
-    Alternatively, use loopmidi from www.tobias-erichsen.de/software/loopmidi.html
 Install OpenCV's python module from http://www.lfd.uci.edu/~gohlke/pythonlibs/#opencv
 You can download ready-made videos (video-fonts) from https://bitbucket.org/yigalsh/anyplay/downloads, and extract them to videos/ folder.
-Download Soundfont Midi Player http://falcosoft.hu/softwares.html
 Install ffmpeg and put it in the system path.
-
-Setup:     MidiPlayer_a ----> loopback device ----> MidiPlayer_b
-                                                                  |
-                                                                  --------> play.py
